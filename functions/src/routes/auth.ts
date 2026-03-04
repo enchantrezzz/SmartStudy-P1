@@ -37,9 +37,6 @@ export const signup = onCall<SignupData> (async (request) => {
             role: "user" // default role
         });
 
-        // const redirect = {url: 'https://localhost:5000/login'};
-        // const link = await admin.auth().generateEmailVerificationLink(email, redirect);
-
         // returns the uid and email if successfull
         return {
             uid: user.uid, 
@@ -63,14 +60,6 @@ export const signup = onCall<SignupData> (async (request) => {
 
 export const login = onCall<LoginData> (async (request) => {
 
-    // Authentication check
-    // const authUser = request.auth; // contains the authenticated user's info (added automatically by firebase)
-
-    // if (!authUser) {
-       //  throw new functions.https.HttpsError("unauthenticated", "You must be logged in!");
-        // Ensures only authenticated users can call this function
-    // }
-
     // Pull field from LoginData object (data extraction)
     const {uid} = request.data;
 
@@ -78,10 +67,6 @@ export const login = onCall<LoginData> (async (request) => {
     if (!uid) {
         throw new HttpsError("invalid-argument", "User ID is required");
     }
-
-    // if (authUser.uid !== uid) {
-    //     throw new functions.https.HttpsError("permission-denied", "cannot access other user's profile");
-    // }
 
     try {
 
