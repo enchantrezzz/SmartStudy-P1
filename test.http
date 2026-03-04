@@ -1,0 +1,9 @@
+POST http://127.0.0.1:5001/project-set-1-a7bff/us-central1/signupUser
+Content-Type: application/json
+
+{
+  "data": {
+    "email": "vscode-test@gmail.com",
+    "password": "password123"
+  }
+}
