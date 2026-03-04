@@ -62,12 +62,12 @@ export const signup = functions.https.onCall<SignupData> (async (request) => {
 export const login = functions.https.onCall<LoginData> (async (request) => {
 
     // Authentication check
-    const authUser = request.auth; // contains the authenticated user's info (added automatically by firebase)
+    // const authUser = request.auth; // contains the authenticated user's info (added automatically by firebase)
 
-    if (!authUser) {
-        throw new functions.https.HttpsError("unauthenticated", "You must be logged in!");
+    // if (!authUser) {
+       //  throw new functions.https.HttpsError("unauthenticated", "You must be logged in!");
         // Ensures only authenticated users can call this function
-    }
+    // }
 
     // Pull field from LoginData object (data extraction)
     const {uid} = request.data;
@@ -77,9 +77,9 @@ export const login = functions.https.onCall<LoginData> (async (request) => {
         throw new functions.https.HttpsError("invalid-argument", "User ID is required");
     }
 
-    if (authUser.uid !== uid) {
-        throw new functions.https.HttpsError("permission-denied", "cannot access other user's profile");
-    }
+    // if (authUser.uid !== uid) {
+    //     throw new functions.https.HttpsError("permission-denied", "cannot access other user's profile");
+    // }
 
     try {
 
