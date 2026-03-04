@@ -1,4 +1,4 @@
-import * as functions from "firebase-functions";
+import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 
 // Defines what s sign-up request must look like
@@ -15,14 +15,14 @@ interface LoginData {
 // Sign-up: Creating a new user
 
 // Defines a callable function (triggered by onCall)
-export const signup = functions.https.onCall<SignupData> (async (request) => {
+export const signup = onCall<SignupData> (async (request) => {
 
     // pulls specific fields out of the SignupData object for use by the server
     const {email, password} = request.data;
 
     // Validation check; Stops bad data 
-    if (!email || password.length < 6) {
-        throw new functions.https.HttpsError("invalid-argument", "Password must be at least 6 characters.");
+    if (!email || !password || password.length < 6) {
+        throw new HttpsError("invalid-argument", "Password must be at least 6 characters.");
     }
     
     try {
@@ -33,7 +33,7 @@ export const signup = functions.https.onCall<SignupData> (async (request) => {
         await admin.firestore().collection("users").doc(user.uid).set({
             // Create or override document with this data
             email: user.email, // user email from auth
-            createdAt: admin.firestore.FieldValue.serverTimestamp(), // current server time
+            createdAt: new Date().toISOString(), // current server time
             role: "user" // default role
         });
 
@@ -48,18 +48,20 @@ export const signup = functions.https.onCall<SignupData> (async (request) => {
             };
 
     } catch (error: any) {
+
+        console.log("Full error log: ", error.message);
         // Specific error mapping
         if (error.code == 'auth/email-already-exists'){
-            throw new functions.https.HttpsError("already-exists", "Email is already registered.");
+            throw new HttpsError("already-exists", "Email is already registered.");
         }
 
-        throw new functions.https.HttpsError("internal", "Something went wrong.");
+        throw new HttpsError("internal", `Something went wrong, ERROR: ${error.message}`);
     }
 });
 
 // Login: login an existing user 
 
-export const login = functions.https.onCall<LoginData> (async (request) => {
+export const login = onCall<LoginData> (async (request) => {
 
     // Authentication check
     // const authUser = request.auth; // contains the authenticated user's info (added automatically by firebase)
@@ -74,7 +76,7 @@ export const login = functions.https.onCall<LoginData> (async (request) => {
 
     // Validation: check if a UID was provided
     if (!uid) {
-        throw new functions.https.HttpsError("invalid-argument", "User ID is required");
+        throw new HttpsError("invalid-argument", "User ID is required");
     }
 
     // if (authUser.uid !== uid) {
@@ -88,7 +90,7 @@ export const login = functions.https.onCall<LoginData> (async (request) => {
 
         // Check if user exists in the database
         if (!userDoc.exists) {
-            throw new functions.https.HttpsError("not-found", "User profile not found.");
+            throw new HttpsError("not-found", "User profile not found.");
         }
 
         const userData = userDoc.data();
@@ -101,6 +103,6 @@ export const login = functions.https.onCall<LoginData> (async (request) => {
             lastLogin: new Date().toISOString()
         };
     } catch (error: any) {
-        throw new functions.https.HttpsError("internal", `Login failed: ${error.message}`);
+        throw new HttpsError("internal", `Login failed: ${error.message}`);
     }
 });
