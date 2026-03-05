@@ -10,7 +10,8 @@ interface SignupData {
 
 // Defines the login requirements
 interface LoginData {
-    uid: string;
+    email: string;
+    password: string;
 }
 
 // Sign-up: Creating a new user
@@ -66,48 +67,94 @@ export const signup = onCall<SignupData>(async (request) => {
 });
 
 // Login: login an existing user
-
 export const login = onCall<LoginData>(async (request) => {
+
     // Pull field from LoginData object (data extraction)
+    const { email, password } = request.data;
 
-    const token = request.auth?.token;
-
-    if (!token) {
+    if (!email || !password) {
         throw new HttpsError(
-            "unauthenticated",
-            "User must be logged in."
-        );
+            "invalid-argument", 
+            "Email and password are required");
     }
 
-    const uid = token.uid;
-    const email = token.email;
-
     try {
+
+        // Retrieve API key from .env
+        const apiKey = process.env.APP_API_KEY;
+
+        // Added the REST API call - verifies password and returns the uid and token
+        const authRes = await fetch(
+            `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${apiKey}`,
+            {
+                method: "POST",
+                headers: { "Content-Type": "applications/json" },
+                body: JSON.stringify({
+                    email,
+                    password,
+                    returnSecureToken: true
+                })
+            }
+        );
+
+        if (!authRes.ok) {
+            const err = await authRes.json();
+            const errorCode = err.error?.message;
+
+            // Error mapping
+            if (errorCode === "EMAIL_NOT_FOUND" || errorCode === "INVALID_PASSWORD") {
+                throw new HttpsError(
+                    "unauthenticated",
+                    "Invalid email or password.");
+            }
+
+            if (errorCode === "USER_DISABLED") {
+                throw new HttpsError(
+                    "permission-denied", 
+                    "This account has been disabled.");
+            }
+
+            throw new HttpsError(
+                "unauthenticated", 
+                "Authentication failed.");
+
+        }
+
+        const authData = await authRes.json(); // Read the body stream and parses from JSON to TS object
+        const uid = authData.localId;
+        const idToken = authData.idToken;
+
         // Fetch user profile from Firestore
         const userDoc = await admin
-        .firestore()
-        .collection("users")
-        .doc(uid)
-        .get();
+            .firestore()
+            .collection("users")
+            .doc(uid)
+            .get();
 
         // Check if user exists in the database
         if (!userDoc.exists) {
-            throw new HttpsError("not-found", "User profile not found.");
+            throw new HttpsError(
+                "not-found", 
+                "User profile not found.");
         }
 
         const userData = userDoc.data();
         const lastLogin = new Date().toISOString();
 
-        await admin.firestore().collection("users").doc(uid).update({lastLogin})
+        await admin.firestore().collection("users").doc(uid).update({ lastLogin });
 
         // return the profile data
         return {
             uid,
-            email,
+            email: userData?.email,
             role: userData?.role,
+            idToken,
             lastLogin,
         };
+
     } catch (error: any) {
-        throw new HttpsError("internal", `Login failed: ${error.message}`);
+        throw new HttpsError(
+            "internal", 
+            `Login failed: ${error.message}`);
     }
 });
