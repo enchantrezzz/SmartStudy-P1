@@ -42,15 +42,11 @@ export const signup = onCall<SignupData>(async (request) => {
             role: "user", // default role
         });
 
-        const token = await admin.auth().createCustomToken(user.uid);
-
         // returns the uid and email if successfull
         return {
             displayName: user.displayName,
             uid: user.uid,
             email: user.email,
-            token
-            // verificationLink: link
         };
     } catch (error: any) {
         console.log("Full error log: ", error.message);
@@ -83,12 +79,19 @@ export const login = onCall<LoginData>(async (request) => {
         // Retrieve API key from .env
         const apiKey = process.env.APP_API_KEY;
 
+        const isEmulator = process.env.FUNCTIONS_EMULATOR === "true";
+
+        const authUrl = isEmulator
+    ? `http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${apiKey}`
+    : `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${apiKey}`;
+
+
         // Added the REST API call - verifies password and returns the uid and token
         const authRes = await fetch(
-            `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${apiKey}`,
+            authUrl, 
             {
                 method: "POST",
-                headers: { "Content-Type": "applications/json" },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     email,
                     password,
