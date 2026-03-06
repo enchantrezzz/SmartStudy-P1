@@ -14,6 +14,10 @@ interface LoginData {
     password: string;
 }
 
+interface ResetPasswordData {
+    email: string;
+}
+
 // Sign-up: Creating a new user
 
 // Defines a callable function (triggered by onCall)
@@ -159,5 +163,29 @@ export const login = onCall<LoginData>(async (request) => {
         throw new HttpsError(
             "internal", 
             `Login failed: ${error.message}`);
+    }
+});
+
+export const resetPass = onCall<ResetPasswordData>(async (request) => {
+    const {email} = request.data;
+
+    if(!email){
+        throw new HttpsError(
+            "invalid-argument",
+            "Please provide an email!"
+        );
+    }
+
+    try {
+        await admin.auth().generatePasswordResetLink(email);
+
+        return {
+            message: "Password reset link has been sent"
+        };
+    } catch (error: any){
+        if (error.code === "auth/user-not-found") {
+            throw new HttpsError("not-found", "No account found with that email.");
+        }
+        throw new HttpsError("internal", `Reset failed: ${error.message}`);
     }
 });
