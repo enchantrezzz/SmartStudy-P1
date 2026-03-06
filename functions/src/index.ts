@@ -4,7 +4,7 @@
 // imports the Firebase Admin SDK
 import * as admin from "firebase-admin";
 
-import {signup, login} from "./routes/auth";
+import {signup, login, resetPass} from "./routes/auth";
 
 // initializes the Firebase Admin SDK with default credentials
 admin.initializeApp();
@@ -12,4 +12,5 @@ admin.initializeApp();
 // Export functions so firebase can use them
 export const signupUser = signup;
 export const loginUser = login;
+export const resetUserPassword = resetPass;
 
