@@ -148,6 +148,15 @@ export const login = onCall<LoginData>(async (request) => {
                 "User profile not found.");
         }
 
+        const userRecord = await admin.auth().getUser(uid);
+
+        if (!userRecord.emailVerified){
+            throw new HttpsError(
+                "permission-denied",
+                "Please verify your email before logging in!"
+            );
+        }
+
         const userData = userDoc.data();
         const lastLogin = new Date().toISOString();
 
