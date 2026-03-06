@@ -46,11 +46,14 @@ export const signup = onCall<SignupData>(async (request) => {
             role: "user", // default role
         });
 
+        await admin.auth().generateEmailVerificationLink(email);
+
         // returns the uid and email if successfull
         return {
             displayName: user.displayName,
             uid: user.uid,
             email: user.email,
+            message: "Account has been created. Please verify your email!"
         };
     } catch (error: any) {
         console.log("Full error log: ", error.message);
