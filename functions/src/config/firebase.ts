@@ -4,7 +4,7 @@
 // imports the Firebase Admin SDK
 import * as admin from "firebase-admin";
 
-import {signup, login, resetPass} from "../routes/auth";
+import {signup, login, resetPass} from "../controllers/authController";
 
 // initializes the Firebase Admin SDK with default credentials
 admin.initializeApp();
